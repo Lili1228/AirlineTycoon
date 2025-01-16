@@ -4427,6 +4427,7 @@ void COptions::WriteOptions() {
     CRegistryAccess reg(chRegKey);
 
     // Modded
+    reg.WriteRegistryKeyEx_l(gLanguage, "OptionLanguage");
     reg.WriteRegistryKey_l(OptionFullscreen);
     reg.WriteRegistryKey_b(OptionKeepAspectRatio);
     reg.WriteRegistryKey_u(OptionTicketPriceIncrement);

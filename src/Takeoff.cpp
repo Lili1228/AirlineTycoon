@@ -288,7 +288,7 @@ void CTakeOffApp::CLI(int argc, char *argv[]) {
 // CTakeOffApp Read Options from various places (file, registry, cli)
 //--------------------------------------------------------------------------------------------
 void CTakeOffApp::ReadOptions(int argc, char *argv[]) {
-    AT_Log("Reading video options");
+    AT_Log("Reading options");
 
     // Die Standardsprachen:
     //#define LANGUAGE_D       0             //D-Deutsch, inklusive
@@ -312,16 +312,26 @@ void CTakeOffApp::ReadOptions(int argc, char *argv[]) {
     //#define LANGUAGE_9      18             //U-noch frei
     //#define LANGUAGE_10     19             //V-noch frei
 
+    
+    // gUpdatingPools = TRUE; //Zum testen; für Release auskommentieren
+    CRegistryAccess reg(chRegKey);
+
     gLanguage = LANGUAGE_E;
+    const bool foundLanguageSetting = reg.ReadRegistryKeyEx_l(gLanguage, "OptionLanguage");
+
+    if (!foundLanguageSetting) {
+        // Old method of fetching language...
         std::ifstream ifil = std::ifstream(AppPath + "misc/sabbel.dat");
         if (ifil.is_open()) {
             ifil.read(reinterpret_cast<char *>(&gLanguage), sizeof(gLanguage));
             ifil.close();
         }
 
-    // gUpdatingPools = TRUE; //Zum testen; für Release auskommentieren
+        AT_Log("Language was not set in options file, reading from sabbel: %li", gLanguage);
 
-    CRegistryAccess reg(chRegKey);
+        // Write to settings file:
+        reg.WriteRegistryKeyEx_l(gLanguage, "OptionLanguage");
+    }
 
     SLONG bConfigNoVgaRam = 0;
     SLONG bConfigNoSpeedyMouse = 0;
