@@ -49,6 +49,8 @@ void InitStatusLines(void);
 void InitItems(void);
 void InitTipBms(void);
 void InitGlobeMapper(void);
+bool InitCrashHandling(void);
+void UnloadCrashHandling(void);
 
 //--------------------------------------------------------------------------------------------
 // Misc.Cpp:
