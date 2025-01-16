@@ -82,7 +82,7 @@ void CRouten::ReInit(const CString &TabFilename, bool bNoDoublettes) {
     SLONG routes = CountLines(FileData, FileP) * 2; //2x for "to" and "back"
 
     ReSize(0);
-    ReSize(routes);
+    ReSize(routes + 20/*Buffer in case anything needs to add a new route later on*/);
 
     while (true) {
         if (FileP >= FileData.AnzEntries()) {
