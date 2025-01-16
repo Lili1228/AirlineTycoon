@@ -1378,8 +1378,8 @@ void SIM::DoTimeStep() {
                 Message << rChkPersonRandCreate << rChkPersonRandMisc << rChkHeadlineRand;
                 Message << rChkLMA << rChkRBA << rChkFrachen << rChkGeneric;
 
-                for (auto &c : rChkAA) {
-                    Message << c;
+                for (c = 0; c < MAX_AA; c++) {
+                    Message << rChkAA[c];
                 }
                 for (c = 0; c < 4; c++) {
                     for (d = 0; d < 5; d++) {

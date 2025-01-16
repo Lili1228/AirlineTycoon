@@ -1809,7 +1809,7 @@ void PumpNetwork() {
                 ULONG rRBA = 0;
                 ULONG rAA[MAX_AA];
                 ULONG rFrachen = 0;
-                SLONG rActionId[5 * 4];
+                SLONG rActionId[5 * 4] = { -1 };
 
                 Message >> rTime;
                 Message >> rPersonRandCreate >> rPersonRandMisc >> rHeadlineRand;
