@@ -23,23 +23,6 @@ extern SLONG timeReisClose;
 // Museum Konstruktion, Initialisation, Destruction
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-//--------------------------------------------------------------------------------------------
-// Zählt wie oft das Zeichen vorkommt:
-//--------------------------------------------------------------------------------------------
-SLONG strchrcount(CString Text, char chr);
-
-SLONG strchrcount(CString Text, char chr) {
-    SLONG c = 0;
-    SLONG n = 0;
-
-    for (c = n = 0; c < Text.GetLength(); c++) {
-        if (Text[SLONG(c)] == chr) {
-            n++;
-        }
-    }
-
-    return (n);
-}
 
 //--------------------------------------------------------------------------------------------
 // Bei Cities mit zwei Leerzeichen (Palm de Mallorca und Rio de Janeiro) wird nur das erste Wort genommen:
@@ -324,20 +307,17 @@ void CReisebuero::OnPaint() {
 // void CReisebuero::OnPaint()
 //--------------------------------------------------------------------------------------------
 void CReisebuero::RepaintZettel(SLONG n) {
-    if (ReisebueroAuftraege[n].Praemie > 0) {
-        ZettelBms[n].ReSize(gZettelBms[n % 3].Size);
-        ZettelBms[n].BlitFrom(gZettelBms[n % 3]);
+    ZettelBms[n].ReSize(gZettelBms[n % 3].Size);
+    ZettelBms[n].BlitFrom(gZettelBms[n % 3]);
 
-        ZettelBms[n].PrintAt(
-            bprintf("%s-%s", (LPCTSTR)Cities[ReisebueroAuftraege[n].VonCity].Kuerzel, (LPCTSTR)Cities[ReisebueroAuftraege[n].NachCity].Kuerzel), FontSmallBlack,
-            TEC_FONT_CENTERED, XY(3, 10), XY(ZettelBms[n].Size.x - 3, 29));
+    ZettelBms[n].PrintAt(bprintf("%s-%s", (LPCTSTR)Cities[ReisebueroAuftraege[n].VonCity].Kuerzel, (LPCTSTR)Cities[ReisebueroAuftraege[n].NachCity].Kuerzel),
+                         FontSmallBlack, TEC_FONT_CENTERED, XY(3, 10), XY(ZettelBms[n].Size.x - 3, 29));
 
-        ZettelBms[n].PrintAt(ShortenLongCities(Cities[ReisebueroAuftraege[n].VonCity].Name), FontSmallBlack, TEC_FONT_CENTERED, XY(3, 31),
-                             XY(ZettelBms[n].Size.x - 3, 102));
-        ZettelBms[n].PrintAt("-", FontSmallBlack, TEC_FONT_CENTERED, XY(3, 42), XY(ZettelBms[n].Size.x - 3, 102));
-        ZettelBms[n].PrintAt(ShortenLongCities(Cities[ReisebueroAuftraege[n].NachCity].Name), FontSmallBlack, TEC_FONT_CENTERED, XY(3, 54),
-                             XY(ZettelBms[n].Size.x - 3, 102));
-    }
+    ZettelBms[n].PrintAt(ShortenLongCities(Cities[ReisebueroAuftraege[n].VonCity].Name), FontSmallBlack, TEC_FONT_CENTERED, XY(3, 31),
+                         XY(ZettelBms[n].Size.x - 3, 102));
+    ZettelBms[n].PrintAt("-", FontSmallBlack, TEC_FONT_CENTERED, XY(3, 42), XY(ZettelBms[n].Size.x - 3, 102));
+    ZettelBms[n].PrintAt(ShortenLongCities(Cities[ReisebueroAuftraege[n].NachCity].Name), FontSmallBlack, TEC_FONT_CENTERED, XY(3, 54),
+                         XY(ZettelBms[n].Size.x - 3, 102));
 }
 
 //--------------------------------------------------------------------------------------------

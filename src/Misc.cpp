@@ -49,6 +49,42 @@ SLONG ReadLine(BUFFER_V<UBYTE> &Buffer, SLONG BufferStart, char *Line, SLONG Lin
     return (c);
 }
 
+
+//--------------------------------------------------------------------------------------------
+// Zählt wie oft das Zeichen vorkommt:
+//--------------------------------------------------------------------------------------------
+SLONG strchrcount(CString Text, char chr) {
+    SLONG c = 0;
+    SLONG n = 0;
+
+    for (c = n = 0; c < Text.GetLength(); c++) {
+        if (Text[SLONG(c)] == chr) {
+            n++;
+        }
+    }
+
+    return (n);
+}
+
+SLONG strchrcount(char *str, const char delimiters[]) {
+    SLONG count = 0;
+
+    if (str == nullptr || delimiters == nullptr) {
+        return count;
+    }
+
+    for (char *ptr = str; *ptr != '\0'; ++ptr) {
+        for (const char *delim = delimiters; *delim != '\0'; ++delim) {
+            if (*ptr == *delim) {
+                ++count;
+                break; // Exit the delimiter loop when a match is found
+            }
+        }
+    }
+
+    return count;
+}
+
 //--------------------------------------------------------------------------------------------
 // Zählt alle Zeilen in einem Buffer
 //--------------------------------------------------------------------------------------------
@@ -154,14 +190,14 @@ CString KorrigiereUmlaute(CString &OriginalText) {
 }
 
 //--------------------------------------------------------------------------------------------
-//Überprüft, ob der Cursor in einem Bereich ist und erledigt das Highlighting:
+// Überprüft, ob der Cursor in einem Bereich ist und erledigt das Highlighting:
 //--------------------------------------------------------------------------------------------
 BOOL CheckCursorHighlight(const CRect &rect, UWORD FontColor, SLONG Look, SLONG TipId, SLONG ClickArea, SLONG ClickId, SLONG ClickPar1, SLONG ClickPar2) {
     return (CheckCursorHighlight(gMousePosition, rect, FontColor, Look, TipId, ClickArea, ClickId, ClickPar1, ClickPar2));
 }
 
 //--------------------------------------------------------------------------------------------
-//Überprüft, ob der Cursor in einem Bereich ist und erledigt das Highlighting:
+// Überprüft, ob der Cursor in einem Bereich ist und erledigt das Highlighting:
 //--------------------------------------------------------------------------------------------
 BOOL CheckCursorHighlight(const XY &CursorPos, const CRect &rect, UWORD FontColor, SLONG Look, SLONG TipId, SLONG ClickArea, SLONG ClickId, SLONG ClickPar1,
                           SLONG ClickPar2) {
@@ -549,11 +585,10 @@ SLONG CalculateFlightCostRechnerisch(SLONG VonCity, SLONG NachCity, SLONG Verbra
 }
 
 //--------------------------------------------------------------------------------------------
-// Berechnet, wieviel ein Flug kostet (min. 1000)
+// Berechnet, wieviel ein Flug kostet (Kerosin aus Tank ohne Kosten)
 //--------------------------------------------------------------------------------------------
 SLONG CalculateFlightCost(SLONG VonCity, SLONG NachCity, SLONG Verbrauch, SLONG Geschwindigkeit, SLONG PlayerNum) {
     SLONG Kerosin = CalculateFlightKerosin(VonCity, NachCity, Verbrauch, Geschwindigkeit);
-    SLONG Kosten = 0;
 
     // Kerosin aus dem Vorrat:
     if (PlayerNum != -1 && (Sim.Players.Players[PlayerNum].TankOpen != 0)) {
@@ -563,7 +598,21 @@ SLONG CalculateFlightCost(SLONG VonCity, SLONG NachCity, SLONG Verbrauch, SLONG 
     }
 
     // Restliches Kerosin kaufen:
-    Kosten += Kerosin * Sim.Kerosin;
+    SLONG Kosten = Kerosin * Sim.Kerosin;
+
+    if (Kosten < 1000) {
+        Kosten = 1000;
+    }
+
+    return (Kosten);
+}
+
+//--------------------------------------------------------------------------------------------
+// Berechnet, wieviel ein Flug kostet (ignoriere Kerosin-Tanks)
+//--------------------------------------------------------------------------------------------
+SLONG CalculateFlightCostNoTank(SLONG VonCity, SLONG NachCity, SLONG Verbrauch, SLONG Geschwindigkeit) {
+    SLONG Kerosin = CalculateFlightKerosin(VonCity, NachCity, Verbrauch, Geschwindigkeit);
+    SLONG Kosten = Kerosin * Sim.Kerosin;
 
     if (Kosten < 1000) {
         Kosten = 1000;
@@ -578,7 +627,7 @@ SLONG CalculateFlightCost(SLONG VonCity, SLONG NachCity, SLONG Verbrauch, SLONG 
 void InitEinheiten(const CString &Filename) {
     SLONG c = 0;
 
-    ETexte.Open(Filename, TEXTRES_CACHED);
+    ETexte.Open(Filename);
 
     Einheiten.ReSize(14);
 
@@ -602,6 +651,8 @@ __int64 CEinheit::Umrechnung64(__int64 Value) const { return (static_cast<__int6
 // Rechnet in String um:
 //--------------------------------------------------------------------------------------------
 char *CEinheit::bString(SLONG Value) const { return (bprintf(Name, (LPCTSTR)Insert1000erDots(Umrechnung(Value)))); }
+
+char *CEinheit::bShortString(SLONG Value) const { return (bprintf(Name, (LPCTSTR)Shorten1000erDots(Umrechnung(Value)))); }
 
 //--------------------------------------------------------------------------------------------
 // Rechnet in String um:
@@ -1755,6 +1806,30 @@ CString Insert1000erDots64(__int64 Value) {
     String[c] = '\0';
 
     return (String);
+}
+
+CString Shorten1000erDots(SLONG Value) {
+    const long long kThreshold = 1000;
+    const long long millionThreshold = 1000000;
+    const long long billionThreshold = 1000000000;
+
+    CString result, temp;
+
+    if (Value >= billionThreshold) {
+        result.Format("%.3f Mio", Value / static_cast<double>(billionThreshold));
+    } else if (Value >= millionThreshold) {
+        result.Format("%.3fk", Value / static_cast<double>(millionThreshold));
+    } else if (Value >= kThreshold) {
+        temp.Format("%lld", Value);
+        for (int i = temp.GetLength() - 3; i > 0; i -= 3) {
+            temp = temp.Left(i) + "." + temp.Mid(i);
+        }
+        result = temp;
+    } else {
+        result.Format("%lld", Value);
+    }
+
+    return result;
 }
 
 //------------------------------------------------------------------------------

@@ -116,7 +116,7 @@ void PLAYER::CheckAuftragsBerater(const CAuftrag &Auftrag) {
                 for (d = 0, Okay = FALSE; d < Planes.AnzEntries(); d++) {
                     if (Planes.IsInAlbum(d) != 0) {
                         Okay |= static_cast<SLONG>((SLONG(Auftrag.Personen) <= Planes[d].MaxPassagiere + Planes[d].MaxPassagiereFC) &&
-                                                 (Auftrag.FitsInPlane(Planes[d]) != 0));
+                                                   (Auftrag.FitsInPlane(Planes[d]) != 0));
                         // Auftrag.FitsInPlane (PlaneTypes[(SLONG)Planes[d].TypeId]) );
                     }
                 }
@@ -537,6 +537,7 @@ too_large:
     Date = UWORD(Sim.Date + 1 + pRandom->Rand(3));
     BisDate = Date;
     InPlan = 0;
+    bUhrigFlight = TRUE;
 
     // Kopie dieser Formel auch bei Last-Minute
     Praemie = ((CalculateFlightCost(VonCity, NachCity, 8000, 700, -1)) + 99) / 100 * 115;
@@ -791,6 +792,7 @@ void CAuftraege::FillForLastMinute() {
     CalcPlayerMaximums();
 
     ReSize(6); // ex:10
+    FillAlbum();
     
     for (auto &a : *this) {
         a.RefillForLastMinute(1, &Random);
@@ -816,6 +818,7 @@ void CAuftraege::RefillForLastMinute(SLONG Minimum) {
     CalcPlayerMaximums();
 
     ReSize(6); // ex:10
+    FillAlbum();
     
     for (auto &a : *this) {
         if (Anz <= 0) {
@@ -862,6 +865,7 @@ void CAuftraege::FillForReisebuero() {
     CalcPlayerMaximums();
 
     ReSize(6);
+    FillAlbum();
 
     SLONG c = 0;
     for (auto &a : *this) {
@@ -872,7 +876,6 @@ void CAuftraege::FillForReisebuero() {
         } else {
             a.RefillForAusland(1, Sim.HomeAirportId, &Random);
         }
-
         c++;
     }
 
@@ -895,6 +898,7 @@ void CAuftraege::RefillForReisebuero(SLONG Minimum) {
     CalcPlayerMaximums();
 
     ReSize(6);
+    FillAlbum();
 
     SLONG c = 0;
     for (auto &a : *this) {
@@ -912,7 +916,6 @@ void CAuftraege::RefillForReisebuero(SLONG Minimum) {
 
             Anz--;
         }
-
         c++;
     }
 
@@ -941,7 +944,6 @@ void CAuftraege::RefillForReisebuero(SLONG Minimum) {
 
             Minimum--;
         }
-
         c++;
     }
 
@@ -962,6 +964,7 @@ void CAuftraege::FillForAusland(SLONG CityNum) {
     CalcPlayerMaximums();
 
     ReSize(6); // ex:10
+    FillAlbum();
 
     SLONG c = 0;
     for (auto &a : *this) {
@@ -972,7 +975,6 @@ void CAuftraege::FillForAusland(SLONG CityNum) {
         } else {
             a.RefillForAusland(1, CityNum, &Random);
         }
-
         c++;
     }
 }
@@ -986,6 +988,7 @@ void CAuftraege::RefillForAusland(SLONG CityNum, SLONG Minimum) {
     CalcPlayerMaximums();
 
     ReSize(6);
+    FillAlbum();
 
     SLONG c = 0;
     for (auto &a : *this) {
@@ -1003,7 +1006,6 @@ void CAuftraege::RefillForAusland(SLONG CityNum, SLONG Minimum) {
 
             Anz--;
         }
-
         c++;
     }
 
@@ -1032,7 +1034,6 @@ void CAuftraege::RefillForAusland(SLONG CityNum, SLONG Minimum) {
 
             Minimum--;
         }
-
         c++;
     }
 

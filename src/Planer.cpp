@@ -1652,7 +1652,7 @@ void CPlaner::HandleLButtonDown() {
                     pBlock->Index = 0;
                     pBlock->Page = 0;
                     pBlock->SelectedId = pBlock->Table.LineIndex[TableCursor];
-                    
+
                     pBlock->LoadCityPhotoLib(Cities[pBlock->SelectedId]);
 
                     EarthTargetAlpha = UWORD((Cities[pBlock->SelectedId].GlobusPosition.x + 170) * (3200 / 18) - 16000 + 1300);
@@ -1829,6 +1829,7 @@ void CPlaner::HandleLButtonDown() {
                             c = qPlan.Flug.AnzEntries() - 1;
                         }
 
+                        qPlan.Flug[c] = {};
                         qPlan.Flug[c].Okay = 0;
                         qPlan.Flug[c].Startdate = Date;
                         qPlan.Flug[c].Startzeit = Time;
@@ -2012,6 +2013,7 @@ void CPlaner::HandleLButtonDown() {
                                 tmpObjectId = qPlan.Flug[c].ObjectId;
                             };
 
+                            qPlan.Flug[c] = {};
                             qPlan.Flug[c].Okay = 0;
                             qPlan.Flug[c].Startdate = Date;
                             qPlan.Flug[c].Startzeit = Time;
@@ -2280,47 +2282,64 @@ void CPlaner::HandleLButtonDown() {
                     }
                 }
 
+                SLONG ticketPreis = qRRoute.Ticketpreis;
+                SLONG ticketPreisFC = qRRoute.TicketpreisFC;
                 switch ((ClientPosB.y - 40) / 13) {
                 case 2:
-                    qRRoute.Ticketpreis = Cost / 2 / 10 * 10;
-                    qRRoute.TicketpreisFC = qRRoute.Ticketpreis * 2;
+                    ticketPreis = Cost / 2 / 10 * 10;
+                    ticketPreisFC = ticketPreis * 2;
                     break;
                 case 3:
-                    qRRoute.Ticketpreis = Cost / 10 * 10;
-                    qRRoute.TicketpreisFC = qRRoute.Ticketpreis * 2;
+                    ticketPreis = Cost / 10 * 10;
+                    ticketPreisFC = ticketPreis * 2;
                     break;
                 case 4:
-                    qRRoute.Ticketpreis = Cost * 2 / 10 * 10;
-                    qRRoute.TicketpreisFC = qRRoute.Ticketpreis * 2;
+                    ticketPreis = Cost * 2 / 10 * 10;
+                    ticketPreisFC = ticketPreis * 2;
                     break;
                 case 5:
-                    qRRoute.Ticketpreis = Cost * 4 / 10 * 10;
-                    qRRoute.TicketpreisFC = qRRoute.Ticketpreis * 2;
+                    ticketPreis = Cost * 4 / 10 * 10;
+                    ticketPreisFC = ticketPreis * 2;
                     break;
                 default:
                     break;
                 }
 
-                if (ClientPosB.IfIsWithin(148, 40 - 2, 160, 40 - 2 + 14)) {
-                    qRRoute.TicketpreisFC += 10;
-                }
-                if (ClientPosB.IfIsWithin(160, 40 - 2, 172, 40 - 2 + 14)) {
-                    qRRoute.TicketpreisFC -= 10;
-                }
                 if (ClientPosB.IfIsWithin(148, 40 - 2 - 13, 160, 40 - 2 - 13 + 14)) {
-                    qRRoute.Ticketpreis += 10;
+                    if (AtGetAsyncKeyState(ATKEY_CONTROL) / 256 != 0) {
+                        ticketPreis += 100 * Sim.Options.OptionTicketPriceIncrement;
+                        ticketPreisFC += 200 * Sim.Options.OptionTicketPriceIncrement;
+                    } else if (AtGetAsyncKeyState(ATKEY_SHIFT) / 256 != 0) {
+                        ticketPreis += 10 * Sim.Options.OptionTicketPriceIncrement;
+                        ticketPreisFC += 20 * Sim.Options.OptionTicketPriceIncrement;
+                    } else {
+                        ticketPreis += Sim.Options.OptionTicketPriceIncrement;
+                        ticketPreisFC += 2 * Sim.Options.OptionTicketPriceIncrement;
+                    }
                 }
                 if (ClientPosB.IfIsWithin(160, 40 - 2 - 13, 172, 40 - 2 - 13 + 14)) {
-                    qRRoute.Ticketpreis -= 10;
+                    if (AtGetAsyncKeyState(ATKEY_CONTROL) / 256 != 0) {
+                        ticketPreis -= 100 * Sim.Options.OptionTicketPriceIncrement;
+                        ticketPreisFC -= 200 * Sim.Options.OptionTicketPriceIncrement;
+                    } else if (AtGetAsyncKeyState(ATKEY_SHIFT) / 256 != 0) {
+                        ticketPreis -= 10 * Sim.Options.OptionTicketPriceIncrement;
+                        ticketPreisFC -= 20 * Sim.Options.OptionTicketPriceIncrement;
+                    } else {
+                        ticketPreis -= Sim.Options.OptionTicketPriceIncrement;
+                        ticketPreisFC -= 2 * Sim.Options.OptionTicketPriceIncrement;
+                    }
                 }
                 /*if ((ClientPosB.y-27)/13==0)
                   {
-                  case  0: qRRoute.Ticketpreis+=10; break;
-                  case  1: qRRoute.Ticketpreis-=10; break;
+                  case  0: ticketPreis+=10; break;
+                  case  1: ticketPreis-=10; break;
                   }
 
-                  case 10: qRRoute.TicketpreisFC+=10; break;
-                  case 11: qRRoute.TicketpreisFC-=10; break;*/
+                  case 10: ticketPreisFC+=10; break;
+                  case 11: ticketPreisFC-=10; break;*/
+
+                qRRoute.Ticketpreis = ticketPreis;
+                qRRoute.TicketpreisFC = ticketPreisFC;
 
                 Limit(SLONG(0), qRRoute.Ticketpreis, SLONG(Cost * 16 / 10 * 10));
                 Limit(SLONG(0), qRRoute.TicketpreisFC, SLONG(Cost * 16 / 10 * 10 * 3));
@@ -2525,21 +2544,21 @@ void CPlaner::HandleLButtonUp() {
 
                         if (CurrentPostItType == 2) // Auftrag
                         {
-                            VonCityId = Sim.Players.Players[PlayerNum].Auftraege[CurrentPostItId].VonCity;
-                            NachCityId = Sim.Players.Players[PlayerNum].Auftraege[CurrentPostItId].NachCity;
+                            VonCityId = qPlayer.Auftraege[CurrentPostItId].VonCity;
+                            NachCityId = qPlayer.Auftraege[CurrentPostItId].NachCity;
                         } else if (CurrentPostItType == 1) // Route
                         {
                             VonCityId = Routen[CurrentPostItId].VonCity;
                             NachCityId = Routen[CurrentPostItId].NachCity;
                         } else if (CurrentPostItType == 4) // Frachtauftrag
                         {
-                            VonCityId = Sim.Players.Players[PlayerNum].Frachten[CurrentPostItId].VonCity;
-                            NachCityId = Sim.Players.Players[PlayerNum].Frachten[CurrentPostItId].NachCity;
+                            VonCityId = qPlayer.Frachten[CurrentPostItId].VonCity;
+                            NachCityId = qPlayer.Frachten[CurrentPostItId].NachCity;
                         }
 
                         // if (Cities.CalcDistance (VonCityId, NachCityId)>PlaneTypes[qPlayer.Planes[pBlock->SelectedId].TypeId].Reichweite*1000)
                         if (Cities.CalcDistance(VonCityId, NachCityId) > qPlayer.Planes[pBlock->SelectedId].ptReichweite * 1000) {
-                            Sim.Players.Players[PlayerNum].Messages.AddMessage(BERATERTYP_GIRL, StandardTexte.GetS(TOKEN_ADVICE, 2310));
+                            qPlayer.Messages.AddMessage(BERATERTYP_GIRL, StandardTexte.GetS(TOKEN_ADVICE, 2310));
                             return;
                         }
 
@@ -2548,7 +2567,7 @@ void CPlaner::HandleLButtonUp() {
                         SLONG Dauer = Cities.CalcFlugdauer(VonCityId, NachCityId, Speed);
 
                         if (Dauer >= 24) {
-                            Sim.Players.Players[PlayerNum].Messages.AddMessage(BERATERTYP_GIRL, StandardTexte.GetS(TOKEN_ADVICE, 2310));
+                            qPlayer.Messages.AddMessage(BERATERTYP_GIRL, StandardTexte.GetS(TOKEN_ADVICE, 2310));
                             return;
                         }
                     }
@@ -2587,6 +2606,7 @@ void CPlaner::HandleLButtonUp() {
                                 c = qPlan.Flug.AnzEntries() - 1;
                             }
 
+                            qPlan.Flug[c] = {};
                             qPlan.Flug[c].Okay = 0;
                             qPlan.Flug[c].Startdate = Date;
                             qPlan.Flug[c].Startzeit = Time;
@@ -2598,8 +2618,8 @@ void CPlaner::HandleLButtonUp() {
                             }
 
                             if (qPlan.Flug[c].ObjectType == 1) {
-                                qPlan.Flug[c].Ticketpreis = Sim.Players.Players[PlayerNum].RentRouten.RentRouten[Routen(CurrentPostItId)].Ticketpreis;
-                                qPlan.Flug[c].TicketpreisFC = Sim.Players.Players[PlayerNum].RentRouten.RentRouten[Routen(CurrentPostItId)].TicketpreisFC;
+                                qPlan.Flug[c].Ticketpreis = qPlayer.RentRouten.RentRouten[Routen(CurrentPostItId)].Ticketpreis;
+                                qPlan.Flug[c].TicketpreisFC = qPlayer.RentRouten.RentRouten[Routen(CurrentPostItId)].TicketpreisFC;
                             }
 
                             // Zahl der Passagiere berechnen:
@@ -2625,8 +2645,8 @@ void CPlaner::HandleLButtonUp() {
                                 CurrentPostItType = 0;
                             }
 
-                            Sim.Players.Players[PlayerNum].Blocks[CurrentBlock].RefreshData(PlayerNum);
-                            Sim.Players.Players[PlayerNum].Blocks[CurrentBlock].Refresh(PlayerNum, IsLaptop);
+                            qPlayer.Blocks[CurrentBlock].RefreshData(PlayerNum);
+                            qPlayer.Blocks[CurrentBlock].Refresh(PlayerNum, IsLaptop);
                             if (CurrentPostItType != 0) {
                                 PaintPostIt();
                             }
@@ -2936,6 +2956,7 @@ void CPlaner::HandleLButtonDouble() {
                                 c++;
 
                                 if (c < qPlan.Flug.AnzEntries()) {
+                                    qPlan.Flug[c] = {};
                                     qPlan.Flug[c].Okay = 0;
 
                                     if (c > 0) {

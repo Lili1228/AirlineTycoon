@@ -24,7 +24,7 @@ extern SLONG gTimerCorrection; // Is it necessary to adapt the local clock to th
 // Zum Debuggen:
 SLONG rChkTime = 0;
 ULONG rChkPersonRandCreate = 0, rChkPersonRandMisc = 0, rChkHeadlineRand = 0;
-ULONG rChkLMA = 0, rChkRBA = 0, rChkAA[MAX_CITIES], rChkFrachen = 0;
+ULONG rChkLMA = 0, rChkRBA = 0, rChkAA[MAX_AA], rChkFrachen = 0;
 SLONG rChkGeneric, CheckGeneric = 0;
 SLONG rChkActionId[5 * 4];
 
@@ -224,8 +224,8 @@ void PumpNetwork() {
             ULONG Par1 = 0;
             ULONG Par2 = 0;
 
-         Message >> MessageType;
-         AT_Log_I("Net", "Received net event: %s", Translate_ATNET(MessageType));
+            Message >> MessageType;
+            AT_Log_I("Net", "Received net event: %s", Translate_ATNET(MessageType));
 
             switch (MessageType) {
             case ATNET_SETSPEED:
@@ -1147,7 +1147,6 @@ void PumpNetwork() {
 
                 if (qFromPlayer.Planes.GetNumFree() < 2) {
                     qFromPlayer.Planes.ReSize(qFromPlayer.Planes.AnzEntries() + 10);
-                    qFromPlayer.Planes.RepairReferences();
                 }
 
                 qFromPlayer.Planes += Sim.UsedPlanes[0x1000000 + PlaneIndex];
@@ -1808,9 +1807,9 @@ void PumpNetwork() {
                 ULONG rHeadlineRand = 0;
                 ULONG rLMA = 0;
                 ULONG rRBA = 0;
-                ULONG rAA[MAX_CITIES];
+                ULONG rAA[MAX_AA];
                 ULONG rFrachen = 0;
-                SLONG rActionId[5 * 4];
+                SLONG rActionId[5 * 4] = { -1 };
 
                 Message >> rTime;
                 Message >> rPersonRandCreate >> rPersonRandMisc >> rHeadlineRand;
@@ -1840,7 +1839,7 @@ void PumpNetwork() {
                 if (rFrachen != rChkFrachen)
                     DisplayBroadcastMessage(bprintf("rFrachen: %li vs %li\n", rFrachen, rChkFrachen));
 
-                for (c = 0; c < MAX_CITIES; c++)
+                for (c = 0; c < MAX_AA; c++)
                     if (rAA[c] != rChkAA[c])
                         DisplayBroadcastMessage(bprintf("rAA[%li]: %li vs %li\n", c, rAA[c], rChkAA[c]));
 
@@ -1947,11 +1946,13 @@ void PumpNetwork() {
                 SLONG localPlayer = 0;
                 SLONG auftrag = 0;
                 SLONG lm = 0;
+                SLONG fracht = 0;
 
-                Message >> localPlayer >> auftrag >> lm;
+                Message >> localPlayer >> auftrag >> lm >> fracht;
 
                 Sim.Players.Players[localPlayer].Statistiken[STAT_AUFTRAEGE].SetAtPastDay(auftrag);
                 Sim.Players.Players[localPlayer].Statistiken[STAT_LMAUFTRAEGE].SetAtPastDay(lm);
+                Sim.Players.Players[localPlayer].Statistiken[STAT_FRACHTEN].SetAtPastDay(fracht);
             } break;
 
                 //--------------------------------------------------------------------------------------------

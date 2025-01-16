@@ -2,10 +2,15 @@
 // Init.cpp : Routinen zur initialisierung:
 //============================================================================================
 #include "StdAfx.h"
-#include "Checkup.h"
 #include "Editor.h"
 #include <algorithm>
+#include <filesystem>
 #include <sstream>
+
+#ifdef SENTRY
+#include <sentry.h>
+#endif // SENTRY
+
 
 extern SLONG IconsPos[]; // Referenziert globe.cpp
 
@@ -15,8 +20,6 @@ extern CPlaneBuild gPlaneBuilds[37];
 extern CPlanePartRelation gPlanePartRelations[307];
 
 SB_CFont FontVerySmall;
-
-extern char chRegKeyOld[];
 
 DWORD GetKey();
 
@@ -43,6 +46,7 @@ void InitPathVars() {
     ExcelPath = prefix + "data\\%s";
     GliPath = prefix + "gli\\%s";
     MiscPath = prefix + "misc\\%s";
+    PatchPath = "patch\\%s";
     VoicePath = prefix + "voice\\%s";
     SoundPath = "sound\\%s";
     RoomPath = "room\\%s";
@@ -205,7 +209,7 @@ void InitItems() {
         // Relations:
         {
             BUFFER_V<BYTE> tempBuf = LoadCompleteFile(FullFilename("relation.csv", ExcelPath));
-            std::string tempStr((const char*)(tempBuf.getData()), tempBuf.AnzEntries());
+            std::string tempStr((const char *)(tempBuf.getData()), tempBuf.AnzEntries());
             std::istringstream file(tempStr, std::ios_base::in);
 
             file >> str;
@@ -224,7 +228,7 @@ void InitItems() {
         // Planebuilds:
         {
             BUFFER_V<BYTE> tempBuf = LoadCompleteFile(FullFilename("builds.csv", ExcelPath));
-            std::string tempStr((const char*)(tempBuf.getData()), tempBuf.AnzEntries());
+            std::string tempStr((const char *)(tempBuf.getData()), tempBuf.AnzEntries());
             std::istringstream file(tempStr, std::ios_base::in);
 
             file >> str;
@@ -369,4 +373,60 @@ void InitGlobeMapper() {
 
         s += ShadeKey.lPitch;
     }
+}
+
+//--------------------------------------------------------------------------------------------
+// Initialisiert das Crash Handling:
+//--------------------------------------------------------------------------------------------
+bool InitCrashHandling() {
+#ifdef SENTRY
+    const bool disableSentry = DoesFileExist("no-sentry");
+    if (disableSentry)
+        return false;
+
+    sentry_options_t *options = sentry_options_new();
+    sentry_options_set_dsn(options, "https://6c9b29cfe559442b98417942e221250d@o4503905572225024.ingest.sentry.io/4503905573797888");
+    // This is also the default-path. For further information and recommendations:
+    // https://docs.sentry.io/platforms/native/configuration/options/#database-path
+    sentry_options_set_database_path(options, ".sentry-native");
+    sentry_options_set_release(options, VersionString);
+    sentry_options_set_debug(options, 0);
+    sentry_options_add_attachment(options, "debug.txt");
+
+    srand(time(nullptr));
+    int crashId = rand() % 1000 + rand() % 1000 * 1000;
+
+    sentry_options_set_on_crash(
+        options,
+        [](const sentry_ucontext_t *uctx, sentry_value_t event, void *closure) -> sentry_value_t {
+            TeakLibException *e = GetLastException();
+            if (e != nullptr) {
+                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "AT - Exception", e->what(), nullptr);
+            }
+
+            const std::string id = std::to_string(*static_cast<int *>(closure));
+            const std::string msg = std::string("Airline Tycoon experienced an unexpected exception\nPress OK to send crash information to sentry\nPress "
+                                        "Abort to not send the crash to sentry\n\nCustom Crash ID is: ") +
+                                    id;
+            AT_Log_I("CRASH", msg);
+            std::filesystem::copy_file("debug.txt", "crash-" + id + ".txt");
+            if (AbortMessageBox(MESSAGEBOX_ERROR, "Airline Tycoon Deluxe Crash Handler", msg.c_str(), nullptr)) {
+                return sentry_value_new_null(); // Skip
+            }
+
+            return event;
+        },
+        &crashId);
+    sentry_init(options);
+
+    sentry_set_tag("Crash ID", std::to_string(crashId).c_str());
+#endif
+
+    return true;
+}
+
+void UnloadCrashHandling() {
+#ifdef SENTRY
+    sentry_shutdown();
+#endif
 }

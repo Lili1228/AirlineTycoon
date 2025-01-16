@@ -13,7 +13,6 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 extern SB_CColorFX ColorFX;
-extern SLONG ZettelPos[14 * 3];
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Flugaufsicht Konstruktion, Initialisation, Destruction
@@ -67,90 +66,45 @@ CAufsicht::CAufsicht(BOOL bHandy, ULONG PlayerNum) : CStdRaum(bHandy, PlayerNum,
 
     // Prüfen wer, welche Routen hat (wg. Spielziel):
     if (Sim.GetHour() == 9 && Sim.GetMinute() == 0 && Sim.Difficulty == DIFF_NORMAL) {
-        ULONG CityIds[7];
+        std::array<SLONG, 6> cityIds;
 
-        CityIds[0] = Cities(Sim.HomeAirportId);
-        CityIds[1] = Cities(Sim.MissionCities[0]);
-        CityIds[2] = Cities(Sim.MissionCities[1]);
-        CityIds[3] = Cities(Sim.MissionCities[2]);
-        CityIds[4] = Cities(Sim.MissionCities[3]);
-        CityIds[5] = Cities(Sim.MissionCities[4]);
-        CityIds[6] = Cities(Sim.MissionCities[5]);
+        auto homeAirportId = Cities(Sim.HomeAirportId);
+        for (SLONG i = 0; i < cityIds.size(); i++) {
+            cityIds[i] = Cities(Sim.MissionCities[i]);
+        }
 
         for (c = 0; c < Sim.Players.AnzPlayers; c++) {
             PLAYER &qPlayer = Sim.Players.Players[c];
 
-            if (qPlayer.IsOut == 0) {
-                qPlayer.ConnectFlags = 0;
-                for (d = qPlayer.Planes.AnzEntries() - 1; d >= 0; d--) {
-                    if (qPlayer.Planes.IsInAlbum(d) != 0) {
-                        CFlugplan &qPlan = qPlayer.Planes[d].Flugplan;
+            if (qPlayer.IsOut != 0) {
+                continue;
+            }
 
-                        for (e = qPlan.Flug.AnzEntries() - 1; e >= 0; e--) {
-                            if (qPlan.Flug[e].ObjectType == 1) {
-                                if (qPlayer.RentRouten.RentRouten[Routen(qPlan.Flug[e].ObjectId)].Rang != 0U) {
-                                    if (qPlayer.RentRouten.RentRouten[Routen(qPlan.Flug[e].ObjectId)].Auslastung > 20) {
-                                        ULONG a = Routen[qPlan.Flug[e].ObjectId].VonCity;
-                                        ULONG b = Routen[qPlan.Flug[e].ObjectId].NachCity;
+            qPlayer.NumMissionRoutes = 0;
 
-                                        if (a > 0x1000000) {
-                                            a = Cities(a);
-                                        }
-                                        if (b > 0x1000000) {
-                                            b = Cities(b);
-                                        }
+            const auto &qRRouten = qPlayer.RentRouten.RentRouten;
+            for (SLONG i = 0; i < qRRouten.AnzEntries(); i++) {
+                const auto &rentRoute = qRRouten[i];
+                if (rentRoute.Rang == 0 || rentRoute.RoutenAuslastung <= 20) {
+                    continue;
+                }
 
-                                        if (CityIds[0] == a && CityIds[1] == b) {
-                                            qPlayer.ConnectFlags |= 0x0001;
-                                        }
-                                        if (CityIds[0] == a && CityIds[2] == b) {
-                                            qPlayer.ConnectFlags |= 0x0002;
-                                        }
-                                        if (CityIds[0] == a && CityIds[3] == b) {
-                                            qPlayer.ConnectFlags |= 0x0004;
-                                        }
-                                        if (CityIds[0] == a && CityIds[4] == b) {
-                                            qPlayer.ConnectFlags |= 0x0008;
-                                        }
-                                        if (CityIds[0] == a && CityIds[5] == b) {
-                                            qPlayer.ConnectFlags |= 0x0010;
-                                        }
-                                        if (CityIds[0] == a && CityIds[6] == b) {
-                                            qPlayer.ConnectFlags |= 0x0020;
-                                        }
+                ULONG a = Cities(Routen[i].VonCity);
+                ULONG b = Cities(Routen[i].NachCity);
 
-                                        if (CityIds[0] == b && CityIds[1] == a) {
-                                            qPlayer.ConnectFlags |= 0x0100;
-                                        }
-                                        if (CityIds[0] == b && CityIds[2] == a) {
-                                            qPlayer.ConnectFlags |= 0x0200;
-                                        }
-                                        if (CityIds[0] == b && CityIds[3] == a) {
-                                            qPlayer.ConnectFlags |= 0x0400;
-                                        }
-                                        if (CityIds[0] == b && CityIds[4] == a) {
-                                            qPlayer.ConnectFlags |= 0x0800;
-                                        }
-                                        if (CityIds[0] == b && CityIds[5] == a) {
-                                            qPlayer.ConnectFlags |= 0x1000;
-                                        }
-                                        if (CityIds[0] == b && CityIds[6] == a) {
-                                            qPlayer.ConnectFlags |= 0x2000;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                if (a != homeAirportId) {
+                    std::swap(a, b);
+                    if (a != homeAirportId) {
+                        continue;
                     }
                 }
 
-                for (d = e = 0; d < 32; d++) {
-                    if ((qPlayer.ConnectFlags & (1 << d)) != 0) {
-                        e++;
+                for (const auto cityId : cityIds) {
+                    if (b == cityId) {
+                        qPlayer.NumMissionRoutes++;
+                        break;
                     }
                 }
-
-                qPlayer.ConnectFlags = e;
             }
         }
     }
@@ -358,11 +312,16 @@ CAufsicht::CAufsicht(BOOL bHandy, ULONG PlayerNum) : CStdRaum(bHandy, PlayerNum,
 #ifdef DEMO
         if (Sim.Date >= 100)
             StartDialog(TALKER_BOSS, MEDIUM_AIR, 30);
-        else
 #endif
 
-            // Uhrig's Aufträge:
-            if (Sim.Difficulty == DIFF_ADDON09) {
+        auto &qPlayer = Sim.Players.Players[Sim.localPlayer];
+        if ((CheatTestGame != 0 || CheatAutoSkip != 0) && qPlayer.Money < 500000) {
+            qPlayer.Money = 1000000;
+            // log: hprintf ("Event: localPlayer gets Money-Boost for testing reasons");
+        }
+
+        // Uhrig's Aufträge:
+        if (Sim.Difficulty == DIFF_ADDON09) {
             for (SLONG c = 0; c < 4; c++) {
                 PLAYER &qPlayer = Sim.Players.Players[c];
 
@@ -376,7 +335,7 @@ CAufsicht::CAufsicht(BOOL bHandy, ULONG PlayerNum) : CStdRaum(bHandy, PlayerNum,
                     qPlayer.NumOrderFlightsToday2 = qPlayer.NumOrderFlightsToday;
                     qPlayer.Statistiken[STAT_AUFTRAEGE].AddAtPastDay(5);
 
-                    if (qPlayer.Owner != 1) {
+                    if (qPlayer.Owner != 1 || !qPlayer.RobotUse(ROBOT_UHRIG_FLIGHTS_AUTO)) {
                         qPlayer.Add5UhrigFlights();
                     }
                 }
@@ -763,19 +722,9 @@ void CAufsicht::OnPaint() {
     if (CurrentMenu != MENU_BRIEFING || (gMouseLButton != 0) || (gMouseRButton != 0)) {
     do_the_painting_again:
         Painted++;
-        for (SLONG c = 0; c < 7; c++) {
-            // Zettel malen:
-            if ((TafelData.Route[c].ZettelId > 0) && qPlayer.RentRouten.RentRouten[TafelData.Route[c].ZettelId].Rang == 0) {
-                RoomBm.BlitFromT(LeereZettelBms[c % 3], (ZettelPos[c * 2] - 91) * 74 / 441 + 274, (ZettelPos[c * 2 + 1] - 20) * 68 / 366 + 55);
-            }
-
-            if ((TafelData.City[c].ZettelId > 0) && qPlayer.RentCities.RentCities[TafelData.City[c].ZettelId].Rang == 0) {
-                RoomBm.BlitFromT(LeereZettelBms[c % 3], (ZettelPos[(c + 7) * 2] - 91) * 74 / 441 + 274, (ZettelPos[(c + 7) * 2 + 1] - 20) * 68 / 366 + 55);
-            }
-
-            if (TafelData.Gate[c].ZettelId > -1) {
-                RoomBm.BlitFromT(LeereZettelBms[c % 3], (ZettelPos[(c + 14) * 2] - 91) * 74 / 441 + 274, (ZettelPos[(c + 14) * 2 + 1] - 20) * 68 / 366 + 55);
-            }
+        for (SLONG c = 0; c < TafelData.ByPositions.size(); c++) {
+            RoomBm.BlitFromT(LeereZettelBms[c % 3], (TafelData.ByPositions[c]->Position.x - 91) * 74 / 441 + 274,
+                             (TafelData.ByPositions[c]->Position.y - 20) * 68 / 366 + 55);
         }
 
         // Draw Persons:
@@ -909,6 +858,14 @@ void CAufsicht::OnPaint() {
     }
 
     CStdRaum::PumpToolTips();
+
+    if (Sim.Date == gAutoQuitOnDay) {
+        exit(0);
+    }
+    if (CheatAutoSkip != 0 && (gQuickTestRun > 0 || (Sim.Date % 100) != 99)) {
+        OnRButtonDown(0, CPoint());
+        qPlayer.CallItADay = TRUE;
+    }
 }
 
 //--------------------------------------------------------------------------------------------

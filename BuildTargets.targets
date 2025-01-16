@@ -1,0 +1,43 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ATBuildOutput>$(SolutionDir)BUILD\AT\$(Configuration)</ATBuildOutput>
+        <ATDeploymentFolder>$(SolutionDir)BUILD\Deployment</ATDeploymentFolder>
+    </PropertyGroup>
+
+    <!-- 
+      <Command>xcopy "$(SolutionDir)patch" "$(SolutionDir)BUILD\AT\$(Configuration)\patch" /E /I /Y</Command>
+    -->
+
+    <Target Name="PreparePatchFiles" AfterTargets="Link">
+        <ItemGroup>
+            <PatchFiles Include="$(SolutionDir)patch/*.*"/>
+
+            <!-- List of SDL dependencies: -->
+            <Dependencies Include="$(SolutionDir)cmake\sdl2-ttf\lib\x64\SDL2_ttf.dll"/>
+            <Dependencies Include="$(SolutionDir)cmake\sdl2-image\lib\x64\SDL2_image.dll"/>
+            <Dependencies Include="$(SolutionDir)cmake\sdl2-mixer\lib\x64\SDL2_mixer.dll"/>
+            <Dependencies Include="$(SolutionDir)cmake\sdl2\lib\x64\SDL2.dll"/>
+            <Dependencies Include="$(SolutionDir)libs\CrashRpt\install\bin\sentry.dll"/>
+            <Dependencies Include="$(SolutionDir)libs\CrashRpt\install\bin\crashpad_wer.dll"/>
+            <Dependencies Include="$(SolutionDir)libs\CrashRpt\install\bin\crashpad_handler.exe"/>
+        </ItemGroup>
+        <Message Text="Copying patch files to AT build folder" Importance="high" />
+        <Copy SourceFiles="@(PatchFiles)" DestinationFolder="$(ATBuildOutput)\patch" />
+
+        <Copy SourceFiles="@(Dependencies)" DestinationFolder="$(ATBuildOutput)" />
+
+        <Message Text="Creating AT Patches" Importance="high" />
+        <Exec WorkingDirectory="$(ATBuildOutput)"  Command='AT.exe /update-patched-files-only' ContinueOnError="true" ConsoleToMSBuild="true"/>
+    </Target>
+
+    <Target Name="DeployAT" AfterTargets="PreparePatchFiles">
+        <ItemGroup>
+            <OutputPatchFiles Include="$(ATBuildOutput)/patch/*.res"/>
+            <OutputFiles Include="$(ATBuildOutput)/*.*" Exclude="$(ATBuildOutput)/debug.log;$(ATBuildOutput)/AT.json"/>
+        </ItemGroup>
+        <Message Text="Copying build output to Deployment folder" Importance="high" />
+        <Copy SourceFiles='@(OutputFiles)' DestinationFolder='$(ATDeploymentFolder)' />
+        <Copy SourceFiles="@(OutputPatchFiles)" DestinationFolder="$(ATDeploymentFolder)\patch" />
+    
+    </Target>
+</Project>

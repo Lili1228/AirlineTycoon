@@ -50,7 +50,7 @@ Options::Options(BOOL bHandy, SLONG PlayerNum) : CStdRaum(bHandy, PlayerNum, "st
     ClickFx.ReInit("change.raw");
 
     AT_Log_Generic("Loaded font: stat_1.mcf");
-    VersionFont.Load(lpDD, const_cast<char*>((LPCTSTR)FullFilename("stat_1.mcf", MiscPath)));
+    VersionFont.Load(lpDD, const_cast<char *>((LPCTSTR)FullFilename("stat_1.mcf", MiscPath)));
 
     Options::PageNum = 1;
     Options::PlayerNum = PlayerNum;
@@ -98,7 +98,6 @@ Options::~Options() {
             SIM::SendSimpleMessage(ATNET_SETGAMESPEED, 0, Sim.GameSpeed, Sim.localPlayer);
             Sim.ServerGameSpeed = Sim.GameSpeed;
             DisplayBroadcastMessage(bprintf("GameSpeed changed to %i / 7\n", static_cast<int>(std::floor(Sim.ServerGameSpeed / 5)) + 1), Sim.localPlayer);
-              
         }
 
         SIM::SendSimpleMessage(ATNET_OPTIONS, 0, -1, Sim.localPlayer);
@@ -211,14 +210,8 @@ void Options::RefreshKlackerField() {
         KlackerTafel.PrintAt(0, 6, StandardTexte.GetS(TOKEN_MISC, 4022 + Sim.Options.OptionFlipping));
         KlackerTafel.PrintAt(0, 7, StandardTexte.GetS(TOKEN_MISC, 4024 + Sim.Options.OptionTransparenz));
         KlackerTafel.PrintAt(0, 8, StandardTexte.GetS(TOKEN_MISC, 4026 + Sim.Options.OptionSchatten));
-
-        KlackerTafel.PrintAt(0, 10,
-                             Sim.Options.OptionFullscreen == 0   ? "# Display : Fullscreen"
-                             : Sim.Options.OptionFullscreen == 1 ? "# Display : Windowed"
-                             : Sim.Options.OptionFullscreen == 2 ? "# Display : Borderless"
-                                                                 : "???");
-        KlackerTafel.PrintAt(0, 11, ((static_cast<bool>(Sim.Options.OptionKeepAspectRatio)) ? "# Aspect Ratio: Keep" : "# Aspect Ratio: Stretch"));
-
+        KlackerTafel.PrintAt(0, 10, ModdedTexte.GetS(TOKEN_MISC, 1 + Sim.Options.OptionFullscreen));
+        KlackerTafel.PrintAt(0, 11, ModdedTexte.GetS(TOKEN_MISC, 10 + Sim.Options.OptionKeepAspectRatio));
         KlackerTafel.PrintAt(0, 13, StandardTexte.GetS(TOKEN_MISC, 4099));
     } else if (PageNum == 3) // Musik-Optionen
     {
@@ -228,7 +221,7 @@ void Options::RefreshKlackerField() {
         const bool usesOgg = Sim.Options.OptionMusicType == 2;
         SLONG musicShift = usesMidi ? -1 : 0;
 
-        KlackerTafel.PrintAt(0, 2, usesMidi ? "Music: Midi" : usesOgg ? "Music: Ogg" : "Music: Off");
+        KlackerTafel.PrintAt(0, 2, ModdedTexte.GetS(TOKEN_MISC, 20 + Sim.Options.OptionMusicType));
 
         if (Sim.Options.OptionMusicType != 0) {
             if (!usesMidi) {
@@ -241,7 +234,7 @@ void Options::RefreshKlackerField() {
             }
         }
 
-        KlackerTafel.PrintAt(0, 7, "Sound:");
+        KlackerTafel.PrintAt(0, 7, ModdedTexte.GetS(TOKEN_MISC, 30));
         KlackerTafel.PrintAt(1, 8, StandardTexte.GetS(TOKEN_MISC, 4127));
         KlackerTafel.PrintAt(1, 9, StandardTexte.GetS(TOKEN_MISC, 4122));
         KlackerTafel.PrintAt(1, 10, StandardTexte.GetS(TOKEN_MISC, 4123));
@@ -267,9 +260,10 @@ void Options::RefreshKlackerField() {
         KlackerTafel.PrintAt(0, 7, StandardTexte.GetS(TOKEN_MISC, 4044 + Sim.Options.OptionSpeechBubble));
         KlackerTafel.PrintAt(0, 8, StandardTexte.GetS(TOKEN_MISC, 4048 + Sim.Options.OptionBriefBriefing));
         KlackerTafel.PrintAt(0, 9, StandardTexte.GetS(TOKEN_MISC, 4050 + Sim.Options.OptionRandomStartday));
-        KlackerTafel.PrintAt(0, 10, bprintf("# %s" , StandardTexte.GetS(TOKEN_PLANE, 1002)));
-        KlackerTafel.PrintVolumeAt(17, 10, 7, Sim.GameSpeed == 1 ? 0 : Sim.GameSpeed / 5);
-        KlackerTafel.PrintAt(0, 12, StandardTexte.GetS(TOKEN_MISC, 4099));
+        KlackerTafel.PrintAt(0, 10, StandardTexte.GetS(TOKEN_MISC, 4160 + gLanguage));
+        KlackerTafel.PrintAt(0, 11, bprintf("# %s", StandardTexte.GetS(TOKEN_PLANE, 1002)));
+        KlackerTafel.PrintVolumeAt(17, 11, 7, Sim.GameSpeed == 1 ? 0 : Sim.GameSpeed / 5);
+        KlackerTafel.PrintAt(0, 13, StandardTexte.GetS(TOKEN_MISC, 4099));
     } else if (PageNum == 5) // Laden
     {
         KlackerTafel.PrintAt(0, 0, StandardTexte.GetS(TOKEN_MISC, 4070));
@@ -464,11 +458,10 @@ void Options::OnPaint() {
             break;
         }
         case 4: // Sonstiges:
-            if ((Line >= 2 && Line <= 9) || Line == 12) {
+            if ((Line >= 2 && Line <= 10) || Line == 13) {
                 SetMouseLook(CURSOR_HOT, 0, -100, 0);
             }
-            if (Line == 10) 
-            {
+            if (Line == 11) {
                 SetMouseLook(Column >= 17 && Column < 23 ? CURSOR_HOT : CURSOR_NORMAL, 1003, -100, 0);
             }
             break;
@@ -636,13 +629,17 @@ void Options::OnLButtonDown(UINT /*nFlags*/, CPoint point) {
                 ChangedDisplay = 1;
 
                 Sim.Options.OptionFullscreen++;
+                if (Sim.Options.OptionFullscreen == 1) {
+                    Sim.Options.OptionScreenWindowedWidth = 640;
+                    Sim.Options.OptionScreenWindowedHeight = 480;
+                }
                 if (Sim.Options.OptionFullscreen > 2) {
                     Sim.Options.OptionFullscreen = 0;
                 }
             } // Fullscreen Option
 
             if (Line == 11) {
-                Sim.Options.OptionKeepAspectRatio = static_cast<BOOL>(static_cast<BOOL>(Sim.Options.OptionKeepAspectRatio) == 0);
+                Sim.Options.OptionKeepAspectRatio = !Sim.Options.OptionKeepAspectRatio;
                 FrameWnd->UpdateFrameSize();
             } // Aspect Ratio Option
 
@@ -774,15 +771,31 @@ void Options::OnLButtonDown(UINT /*nFlags*/, CPoint point) {
             if (Line == 9) {
                 Sim.Options.OptionRandomStartday ^= 1;
             }
+            if (Line == 10) {
+                gLanguage++;
 
-            if (Line == 10 && Column >= 17 && Column < 24) {
+                // skip not applicable languages:
+                // (those languages are not fully available font-wise)
+                // NOTE(WizzardMaker): maybe add support for those in the future?
+                if (gLanguage == LANGUAGE_T || gLanguage == LANGUAGE_P) {
+                    gLanguage = LANGUAGE_N;
+                }
+
+                if (gLanguage >= 10) {
+                    gLanguage = 0;
+                }
+
+                RefreshKlackerField();
+            }
+
+            if (Line == 11 && Column >= 17 && Column < 24) {
                 auto speed = (Column - 17) * 5;
                 if (speed <= 0) {
                     speed = 1;
                 }
                 Sim.GameSpeed = speed;
             }
-            if (Line == 12) {
+            if (Line == 13) {
                 PageNum = 1;
             }
             RefreshKlackerField();

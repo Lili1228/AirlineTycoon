@@ -23,11 +23,12 @@
 
 #include <jansson.h>
 
+#define AT_Error(...) Hdu.HercPrintfMsg(SDL_LOG_PRIORITY_ERROR, "Reg", __VA_ARGS__)
+#define AT_Log(...) AT_Log_I("Reg", __VA_ARGS__)
+
 CString settingsPath;
 
-void PrepareSettingsPath() {
-    settingsPath = AppPath + CString("AT.json");
-}
+void PrepareSettingsPath() { settingsPath = AppPath + CString("AT.json"); }
 
 //--------------------------------------------------------------------------------------------
 // CRegistryAccess::
@@ -41,16 +42,23 @@ CRegistryAccess::CRegistryAccess(const CString &RegistryPath) {
 }
 
 //--------------------------------------------------------------------------------------------
+// Destruktor:
+//--------------------------------------------------------------------------------------------
+CRegistryAccess::~CRegistryAccess() { Close(); }
+
+//--------------------------------------------------------------------------------------------
 // Öffnet den Zugriff auf einen Bereich der Registry; Gibt FALSE im Fehlerfall zurück:
 //--------------------------------------------------------------------------------------------
 bool CRegistryAccess::Open(const CString &RegistryPath) {
-    Close(); // Alten Zugriff schließen
+    if (IsOpen()) {
+        Close();
+    }
 
     json_error_t error;
 
     settingsJSON = json_load_file(settingsPath, JSON_INDENT(3), &error);
     if (settingsJSON == nullptr) {
-        AT_Log_Generic("encountered error during settings load: %s", error.text);
+        AT_Error("Encountered error during settings load: %s", error.text);
         settingsJSON = json_object();
     }
     if (!IsOpen()) {
@@ -69,16 +77,10 @@ bool CRegistryAccess::Open(const CString &RegistryPath) {
 }
 
 //--------------------------------------------------------------------------------------------
-// Destruktor:
-//--------------------------------------------------------------------------------------------
-CRegistryAccess::~CRegistryAccess() { Close(); }
-
-//--------------------------------------------------------------------------------------------
 // Alten Zugriff schließen:
 //--------------------------------------------------------------------------------------------
 void CRegistryAccess::Close() {
-    if (settingsJSON != nullptr) {
-        json_dump_file(settingsJSON, settingsPath, JSON_INDENT(3));
+    if (IsOpen()) {
         json_decref(settingsJSON);
 #if USE_REG_MIGRATION
         RegCloseKey(hKey);
@@ -91,6 +93,13 @@ void CRegistryAccess::Close() {
 // Gibt TRUE zurück, wenn z.Zt ein Registry-Zugriff offen ist:
 //--------------------------------------------------------------------------------------------
 bool CRegistryAccess::IsOpen() { return (settingsJSON != nullptr); }
+
+void CRegistryAccess::WriteFile() {
+    if (!IsOpen()) {
+        return;
+    }
+    json_dump_file(settingsJSON, settingsPath, JSON_INDENT(3));
+}
 
 //--------------------------------------------------------------------------------------------
 // Schreibt einen Registry-Key; Gibt FALSE im Fehlerfall zurück, sonst TRUE
@@ -115,7 +124,6 @@ bool CRegistryAccess::WriteRegistryKeyEx_l(const SLONG &Long, const CString &Ent
     if (settingsJSON == nullptr) {
         return false;
     }
-
     return (json_object_set_new(settingsJSON, EntryName, json_integer(Long)) > 0);
 }
 
@@ -155,8 +163,8 @@ bool CRegistryAccess::ReadRegistryKeyEx(char *Text, const CString &EntryName) {
         return false;
     }
     return (snprintf(Text, json_string_length(Entry) + 1, "%s", json_string_value(Entry)) >= 0);
-    //unsigned long TempSize = 500;
-    //return (ERROR_SUCCESS == RegQueryValueEx(settingsJSON, EntryName, NULL, NULL, (UBYTE *)Text, &TempSize));
+    // unsigned long TempSize = 500;
+    // return (ERROR_SUCCESS == RegQueryValueEx(settingsJSON, EntryName, NULL, NULL, (UBYTE *)Text, &TempSize));
 }
 
 bool CRegistryAccess::ReadRegistryKeyEx_b(BOOL &Bool, const CString &EntryName) {
@@ -231,5 +239,4 @@ bool CRegistryAccess::ReadRegistryKeyEx_u(ULONG &Long, const CString &EntryName)
 
     Long = json_integer_value(Entry);
     return true;
-
 }

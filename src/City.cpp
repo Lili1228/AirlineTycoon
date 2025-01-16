@@ -12,6 +12,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 SLONG ReadLine(BUFFER_V<UBYTE> &Buffer, SLONG BufferStart, char *Line, SLONG LineLength);
+SLONG CountLines(BUFFER_V<UBYTE> &Buffer, SLONG BufferStart);
 
 //--------------------------------------------------------------------------------------------
 // Konstruktor:
@@ -34,7 +35,8 @@ void CITIES::ReInit(const CString &TabFilename) {
     // Die erste Zeile einlesen
     FileP = ReadLine(FileData, FileP, Line.getData(), 300);
 
-    ReSize(MAX_CITIES);
+    SLONG cities = CountLines(FileData, FileP) * 2; // 2x for buffer in case other cities are added programmatically
+    ReSize(cities);
 
     while (true) {
         if (FileP >= FileData.AnzEntries()) {
@@ -84,6 +86,9 @@ void CITIES::ReInit(const CString &TabFilename) {
     }
 
     ReSize(Anz);
+    HashTable.ReSize(Anz * Anz);
+    HashTable.FillWith(0);
+    HashTableSize = Anz;
 
     UseRealKuerzel(Sim.Options.OptionRealKuerzel);
 }
@@ -109,11 +114,6 @@ void CITIES::UseRealKuerzel(BOOL Real) {
 // Berechnet die Entfernung zweier beliebiger Städte: (in Meter)
 //--------------------------------------------------------------------------------------------
 SLONG CITIES::CalcDistance(SLONG CityId1, SLONG CityId2) {
-    if (HashTable.AnzEntries() == 0) {
-        HashTable.ReSize(AnzEntries() * AnzEntries());
-        HashTable.FillWith(0);
-    }
-
     if (CityId1 >= 0x1000000) {
         CityId1 = (*this)(CityId1);
     }
@@ -121,9 +121,9 @@ SLONG CITIES::CalcDistance(SLONG CityId1, SLONG CityId2) {
         CityId2 = (*this)(CityId2);
     }
 
-    if (HashTable[SLONG(CityId1 + CityId2 * AnzEntries())] != 0) {
-        SLONG rc = HashTable[SLONG(CityId1 + CityId2 * AnzEntries())];
-
+    SLONG idx = CityId1 + CityId2 * HashTableSize;
+    SLONG rc = HashTable[idx];
+    if (rc != 0) {
         return (min(rc, 16440000));
     }
 
@@ -153,9 +153,9 @@ SLONG CITIES::CalcDistance(SLONG CityId1, SLONG CityId2) {
     Alpha = static_cast<FLOAT>(acos((Vector1.x * Vector2.x + Vector1.y * Vector2.y + Vector1.z * Vector2.z) / Vector1.abs() / Vector2.abs()) * 180.0 / 3.14159);
 
     // Berechnung der Länge des Kreissegments: (40040174 = Äquatorumfang)
-    HashTable[SLONG(CityId1 + CityId2 * AnzEntries())] = SLONG(fabs(Alpha) * 40040174.0 / 360.0);
+    rc = SLONG(fabs(Alpha) * 40040174.0 / 360.0);
 
-    SLONG rc = HashTable[SLONG(CityId1 + CityId2 * AnzEntries())];
+    HashTable[idx] = rc;
 
     return (min(rc, 16440000));
 }

@@ -29,6 +29,7 @@ BOOL CheatMissions = FALSE;
 SLONG CheatBerater = 0;
 BOOL CheatAnimNow = FALSE;
 SLONG CheatTestGame = 0;
+SLONG CheatAutoSkip = 0;
 
 //--------------------------------------------------------------------------------------------
 // Die Zufallsgeneratoren:
@@ -40,7 +41,6 @@ TEAKRAND HeadlineRand;
 //--------------------------------------------------------------------------------------------
 // Die Registratur:
 //--------------------------------------------------------------------------------------------
-// CRegistration           Registration;
 SLONG MissionKeys[] = {142, 372, 814, 1042, 2077, 4525};
 SLONG MissionKeys2[] = {111, 172, 472, 1099, 2048, 5055, 6789, 7007, 8192, 9092};
 SLONG MissionKeys3[] = {298, 346, 532, 2098, 3331, 3333, 4001, 4098, 4800, 8099};
@@ -48,7 +48,7 @@ SLONG MissionKeys3[] = {298, 346, 532, 2098, 3331, 3333, 4001, 4098, 4800, 8099}
 //--------------------------------------------------------------------------------------------
 // Pointer auf Fenster:
 //--------------------------------------------------------------------------------------------
-CStdRaum *TopWin; //Übergeordnetes Fenster, z.B. load Airport
+CStdRaum *TopWin; // Übergeordnetes Fenster, z.B. load Airport
 
 //--------------------------------------------------------------------------------------------
 // Einige *WIRKLICH* globale Ressourcen:
@@ -132,9 +132,10 @@ BOOL gRoomJustLeft; // TRUE, wenn Raum gerade verlassen wurde (wegen messagePump
 //--------------------------------------------------------------------------------------------
 // Text-Ressourcen:
 //--------------------------------------------------------------------------------------------
-TEXTRES DialogTexte;   // Die Text-Ressourcen der Dialoge
-TEXTRES StandardTexte; // Allgemeine Texte
-TEXTRES ETexte;        // Die Einheiten
+TEXTRES DialogTexte;    // Die Text-Ressourcen der Dialoge
+TEXTRES StandardTexte;  // Allgemeine Texte
+TEXTRES ModdedTexte;    // Modded Texts
+TEXTRES ETexte;         // Die Einheiten
 
 //--------------------------------------------------------------------------------------------
 // einige Flags:
@@ -143,7 +144,7 @@ BOOL bTest = FALSE;               // Schneller Ablauf zum testen
 BOOL bActive = TRUE;              // is application active?
 BOOL bFullscreen;                 // is application Fullscreen or in Window?
 BOOL bCheatMode = FALSE;          // Ist der Cheatmode zum testen aktiviert?
-BOOL bQuick = FALSE;              // Depeche Mode = Alles auf die Schnelle..
+SLONG gQuickTestRun = 0;          // Depeche Mode = Alles auf die Schnelle..
 BOOL bgWarp = FALSE;              // Spieler warpt zum Ziel
 BOOL bNoVgaRam = FALSE;           // Keine Bitmaps ins VGA-Ram legen
 BOOL bNoSpeedyBar = FALSE;        // Kein SpeedUp für die Statuszeile
@@ -159,6 +160,7 @@ BOOL gDisablePauseKey;            // Pause-Key für Texteingabe abgeschaltet?
 BOOL bgJustDidLotsOfWork = FALSE; // Gegen Sprünge nach Load/Save
 BOOL bLeaveGameLoop = FALSE;      // Hauptschleife verlassen?
 BOOL bFirstClass = FALSE;
+SLONG gAutoQuitOnDay = -1;
 
 //--------------------------------------------------------------------------------------------
 // Das Spiel höchstpersönlich:
@@ -202,6 +204,7 @@ CString IntroPath;    // Der Intro-Film
 CString AppPath;      // Der Ganze Pfad, z.B. "f:\project\takeoff\"
 CString VoicePath;   // die Sprache
 CString MyPlanePath; // die eigenen Flugzeuge
+CString PatchPath;   // Patches path
 
 //--------------------------------------------------------------------------------------------
 // Die Simulationswelt mit ihren Parameter (Zeit, Spieler, Schwierigkeit, ..)
@@ -347,13 +350,13 @@ CSmoker Smokers[5];
 //--------------------------------------------------------------------------------------------
 SBBMS gItemBms;
 CTafelData TafelData;
-CAuftraege LastMinuteAuftraege;           // Die hängen gerade aus
-CAuftraege ReisebueroAuftraege;           // Die hängen gerade aus
-CFrachten gFrachten;                      // Die Frachtaufträge
-CAuftraege AuslandsAuftraege[MAX_CITIES]; // Aus dem Ausland
-SLONG AuslandsRefill[MAX_CITIES];         // Aus dem Ausland
-CFrachten AuslandsFrachten[MAX_CITIES];   // Aus dem Ausland
-SLONG AuslandsFRefill[MAX_CITIES];        // Aus dem Ausland
+CAuftraege LastMinuteAuftraege;            // Die hängen gerade aus
+CAuftraege ReisebueroAuftraege;            // Die hängen gerade aus
+CFrachten gFrachten;                       // Die Frachtaufträge
+std::vector<CAuftraege> AuslandsAuftraege; // Aus dem Ausland
+std::vector<SLONG> AuslandsRefill;         // Aus dem Ausland
+std::vector<CFrachten> AuslandsFrachten;   // Aus dem Ausland
+std::vector<SLONG> AuslandsFRefill;        // Aus dem Ausland
 
 //--------------------------------------------------------------------------------------------
 // Die Soundeffekte:
@@ -408,6 +411,7 @@ const char TOKEN_MISC[] = "Misc";
 const char TOKEN_MUSEUM[] = "Muse";
 const char TOKEN_MONEY[] = "Mony";
 const char TOKEN_NASA[] = "Nasa";
+const char TOKEN_NEWGAME[] = "NewG";
 const char TOKEN_PASSENGER[] = "Pass";
 const char TOKEN_PERSONAL[] = "Pers";
 const char TOKEN_PLANE[] = "Plne";
