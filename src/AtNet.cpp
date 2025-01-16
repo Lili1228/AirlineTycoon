@@ -24,7 +24,7 @@ extern SLONG gTimerCorrection; // Is it necessary to adapt the local clock to th
 // Zum Debuggen:
 SLONG rChkTime = 0;
 ULONG rChkPersonRandCreate = 0, rChkPersonRandMisc = 0, rChkHeadlineRand = 0;
-ULONG rChkLMA = 0, rChkRBA = 0, rChkAA[MAX_CITIES], rChkFrachen = 0;
+ULONG rChkLMA = 0, rChkRBA = 0, rChkAA[MAX_AA], rChkFrachen = 0;
 SLONG rChkGeneric, CheckGeneric = 0;
 SLONG rChkActionId[5 * 4];
 
@@ -1807,7 +1807,7 @@ void PumpNetwork() {
                 ULONG rHeadlineRand = 0;
                 ULONG rLMA = 0;
                 ULONG rRBA = 0;
-                ULONG rAA[MAX_CITIES];
+                ULONG rAA[MAX_AA];
                 ULONG rFrachen = 0;
                 SLONG rActionId[5 * 4];
 
@@ -1839,7 +1839,7 @@ void PumpNetwork() {
                 if (rFrachen != rChkFrachen)
                     DisplayBroadcastMessage(bprintf("rFrachen: %li vs %li\n", rFrachen, rChkFrachen));
 
-                for (c = 0; c < MAX_CITIES; c++)
+                for (c = 0; c < MAX_AA; c++)
                     if (rAA[c] != rChkAA[c])
                         DisplayBroadcastMessage(bprintf("rAA[%li]: %li vs %li\n", c, rAA[c], rChkAA[c]));
 

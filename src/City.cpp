@@ -12,6 +12,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 SLONG ReadLine(BUFFER_V<UBYTE> &Buffer, SLONG BufferStart, char *Line, SLONG LineLength);
+SLONG CountLines(BUFFER_V<UBYTE> &Buffer, SLONG BufferStart);
 
 //--------------------------------------------------------------------------------------------
 // Konstruktor:
@@ -34,7 +35,8 @@ void CITIES::ReInit(const CString &TabFilename) {
     // Die erste Zeile einlesen
     FileP = ReadLine(FileData, FileP, Line.getData(), 300);
 
-    ReSize(MAX_CITIES);
+    SLONG cities = CountLines(FileData, FileP) * 2; // 2x for buffer in case other cities are added programmatically
+    ReSize(cities);
 
     while (true) {
         if (FileP >= FileData.AnzEntries()) {

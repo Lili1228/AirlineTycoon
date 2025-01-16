@@ -1639,10 +1639,10 @@ void NewGamePopup::OnLButtonDown(UINT nFlags, CPoint point) {
             ReisebueroAuftraege.ResetNextId();
             gFrachten.ResetNextId();
 
-            for (c = 0; c < MAX_CITIES; c++) {
+            for (c = 0; c < MAX_AA; c++) {
                 AuslandsAuftraege[c].ResetNextId();
             }
-            for (c = 0; c < MAX_CITIES; c++) {
+            for (c = 0; c < MAX_AA; c++) {
                 AuslandsFrachten[c].ResetNextId();
             }
 

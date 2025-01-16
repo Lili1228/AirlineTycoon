@@ -798,10 +798,10 @@ void CTakeOffApp::InitInstance(int argc, char *argv[]) {
         else
             LOADING_TEXT("Initializing cities...");
         Cities.ReInit("city.csv");
-        AuslandsAuftraege.resize(MAX_CITIES);
-        AuslandsRefill.resize(MAX_CITIES);
-        AuslandsFrachten.resize(MAX_CITIES);
-        AuslandsFRefill.resize(MAX_CITIES);
+        AuslandsAuftraege.resize(MAX_AA);
+        AuslandsRefill.resize(MAX_AA);
+        AuslandsFrachten.resize(MAX_AA);
+        AuslandsFRefill.resize(MAX_AA);
 
         if (gLanguage == LANGUAGE_N)
             LOADING_TEXT("Initialiseert de vliegtuigen...")

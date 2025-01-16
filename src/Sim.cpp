@@ -79,7 +79,7 @@ bool bgIsLoadingSavegame = false;
 // Zum Debuggen:
 extern SLONG rChkTime;
 extern ULONG rChkPersonRandCreate, rChkPersonRandMisc, rChkHeadlineRand;
-extern ULONG rChkLMA, rChkRBA, rChkAA[MAX_CITIES], rChkFrachen;
+extern ULONG rChkLMA, rChkRBA, rChkAA[MAX_AA], rChkFrachen;
 extern SLONG rChkGeneric, CheckGeneric;
 extern SLONG rChkActionId[5 * 4];
 
@@ -92,7 +92,7 @@ void DumpAASeedSum(SLONG /*CallerId*/);
 #ifdef _DEBUG
 void DumpAASeedSum(SLONG CallerId) {
     __int64 sum = 0;
-    for (SLONG c = 0; c < MAX_CITIES; c++)
+    for (SLONG c = 0; c < MAX_AA; c++)
         sum += AuslandsAuftraege[c].Random.GetSeed();
 
     AT_Log("AA Seed sum for %li is %lli\n", CallerId, sum);
@@ -347,17 +347,17 @@ void SIM::ChooseStartup() {
     LastMinuteAuftraege.Random.SRand(0);
     ReisebueroAuftraege.Random.SRand(0);
     gFrachten.Random.SRand(0);
-    for (c = 0; c < MAX_CITIES; c++) {
+    for (c = 0; c < MAX_AA; c++) {
         AuslandsAuftraege[c].Random.SRand(0);
     }
-    for (c = 0; c < MAX_CITIES; c++) {
+    for (c = 0; c < MAX_AA; c++) {
         AuslandsFrachten[c].Random.SRand(0);
     }
 
     rChkTime = rChkPersonRandCreate = rChkPersonRandMisc = rChkHeadlineRand = 0;
     rChkLMA = rChkRBA = rChkFrachen = rChkGeneric = CheckGeneric = 0;
 
-    for (c = 0; c < MAX_CITIES; c++) {
+    for (c = 0; c < MAX_AA; c++) {
         rChkAA[c] = 0;
     }
     for (c = 0; c < 5 * 4; c++) {
@@ -1359,7 +1359,7 @@ void SIM::DoTimeStep() {
                 rChkFrachen = gFrachten.Random.GetSeed();
                 rChkGeneric = CheckGeneric;
 
-                for (SLONG c = 0; c < MAX_CITIES; c++) {
+                for (SLONG c = 0; c < MAX_AA; c++) {
                     rChkAA[c] = AuslandsAuftraege[c].Random.GetSeed();
                 }
 

@@ -146,7 +146,7 @@ constexpr char VersionString[] = FILE_VERSION_STRING;
 #define MAX_TYCOONS 30
 #define MAX_PLANETYPES 200
 #define MAX_BRICKS 340
-#define MAX_CITIES 300
+#define MAX_AA 500
 #define MAX_CLANS 90
 #define MAX_SPECIALS 128 // Zahl der Gates, Rooms, Check-Ins
 #define MAX_ROUTES 1500  // Zahl der vordefinierten Flugrouten
