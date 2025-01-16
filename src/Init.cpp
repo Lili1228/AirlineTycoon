@@ -5,8 +5,12 @@
 #include "Editor.h"
 #include <algorithm>
 #include <filesystem>
-#include <sentry.h>
 #include <sstream>
+
+#ifdef SENTRY
+#include <sentry.h>
+#endif // SENTRY
+
 
 extern SLONG IconsPos[]; // Referenziert globe.cpp
 
