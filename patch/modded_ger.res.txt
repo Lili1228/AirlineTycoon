@@ -32,12 +32,12 @@
 >>0000010
   B::# Aspect Ratio: Stretch
   E::# Aspect Ratio: Stretch
-  F::# Aspect Ratio: Etiré
+  F::# Aspect Ratio: EtirÃ©
   I::# Aspect Ratio: Stretch
   N::# Aspect Ratio: Stretch
   O::# Aspect Ratio: Stretch
   S::# Aspect Ratio: Stretch
-  D::# Verhältnis: Ausdehnen
+  D::# VerhÃ¤ltnis: Ausdehnen
 >>0000011
   B::# Aspect Ratio: Keep
   E::# Aspect Ratio: Keep
@@ -46,7 +46,7 @@
   N::# Aspect Ratio: Keep
   O::# Aspect Ratio: Keep
   S::# Aspect Ratio: Keep
-  D::# Verhältnis: Beibehalten
+  D::# VerhÃ¤ltnis: Beibehalten
 >>0000020
   B::# Music: Off
   E::# Music: Off

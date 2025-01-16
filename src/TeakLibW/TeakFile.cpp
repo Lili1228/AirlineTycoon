@@ -1,6 +1,8 @@
 #include "StdAfx.h"
 
 #include <filesystem>
+#include <fstream>
+
 namespace fs = std::filesystem;
 
 #define AT_Log(...) AT_Log_I("TeakFile", __VA_ARGS__)
@@ -169,12 +171,13 @@ void CRLEReader::SaveAsPlainText() {
         GET_RAW_TEXT_PATH(Path, fn, 255);
         AT_Log("Saving as plain text file to %s", fn);
 
-        // TEAKFILE file(fn, TEAKFILE_WRITE);
-        FILE *fp = fopen(fn, "wb");
-        for (SLONG i = 0; i < buffer.AnzEntries(); ++i) {
-            fputc(buffer[i], fp);
-        }
-        fclose(fp);
+        CString data(reinterpret_cast<const char *>(buffer.getData()), buffer.AnzEntries());
+        char *str = SDL_iconv_string("UTF-8", "ISO-8859-1", data.Buffer(), data.length());
+
+        std::ofstream ofs(fn, std::ios::trunc);
+        ofs << str;
+        ofs.close();
+        SDL_free(str);
     }
 }
 
@@ -381,6 +384,9 @@ void CRLEWriter::UpdateFromPlainText() {
     buffer.resize(bufferSize);
     reader.Buffer(buffer.data(), bufferSize);
 
-    Write(reinterpret_cast<const unsigned char *>(buffer.data()), bufferSize);
+    CString input(buffer.data(), bufferSize);
+    CString output = SDL_iconv_string("ISO-8859-1", "UTF-8", input.Buffer(), input.length());
+
+    Write(reinterpret_cast<const unsigned char*>(output.Buffer()), static_cast<SLONG>(output.size()));
     reader.Close();
 }

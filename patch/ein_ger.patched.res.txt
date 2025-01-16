@@ -19,4 +19,4 @@
   N::%s trommels
   O::%s barris
   S::%s barriles
-  D::%s fässer
+  D::%s fÃ¤sser
